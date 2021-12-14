@@ -12,7 +12,7 @@ const config = {
 
 // Changed .createConnection() to .createPool() because we are using same connection and prevent ECONN time out error
 let db = mysql.createPool(config);
-
+db = db.promise();
 // Promisify let we use MySQL library with async await
 // con.query = util.promisify(con.query);
 module.exports = { db, mysql };

@@ -9,11 +9,13 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json({ limit: '50mb' })); // Allow more parameters and file size to be parsed
 app.use(express.urlencoded({ extended: true, limit: '50mb', parameterLimit: 1000000 }));
 
-// app.use(auth);
 
 app.get('/', (req, res) => {
     res.send('Welcome!!');
 });
+
+require('./model/authentication')({app, auth, db, mysql})
+app.use(auth);  // forcing every service to auth after this line
 
 
 const PORT = process.env.PORT;

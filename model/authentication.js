@@ -1,4 +1,107 @@
 
-function authentication({app, db, mysql}) {
-    
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const jwtConfig = require('../config/jwtConfig');
+
+function authentication({ app, auth, db, mysql }) {
+
+    async function isOldUser(email) {
+        const sql = `SELECT * FROM User WHERE email = ?`;
+        const [user] = await db.query(sql, [email]);
+        console.log('User:', user);
+        if (user.length != 0) {
+            return user;
+        } else {
+            return false;
+        }
+    }
+
+    async function createWallet () {
+        const sql = `INSERT INTO Wallet (balance) VALUES (0)`
+        const [wallet, fields] = await db.query(sql);
+        console.log('Wallet: ', wallet.insertId);
+        if (!wallet.insertId) {
+            throw "Wallet cannot created";
+        }
+        return wallet.insertId;
+    }
+
+    app.post('/register', async (req, res) => {
+
+        try {
+            const {
+                email,
+                username,
+                password,
+            } = req.body
+
+            if (!(username && email && password)) {
+                return res.status(400).send("All inputs are required");
+            }
+
+            if (await isOldUser(email)) {
+                return res.status(409).send("User already exist. Please login instead")
+            }
+
+            const encryptedPassword = await bcrypt.hash(password, 10);
+            const walletId = await createWallet();
+
+            const sqlInsertUser = `
+            INSERT INTO User (username, email, password, wallet_id, Tag_id) 
+            VALUES (?,?,?,?,?)
+            `;
+            const [insertUserResult] =  await db.query(sqlInsertUser, [username, email, encryptedPassword, walletId, 0]);
+            if (!insertUserResult.insertId) {
+                return res.status(500).send("Cannot create user");
+            }
+
+            let user_details = {
+                user_id: insertUserResult.insertId,
+                email: email,
+                username: username
+            }
+            const token = jwt.sign(user_details, process.env.TOKEN_SECRET, jwtConfig);
+            user_details.token = token;
+            req.user = user_details;
+
+            res.status(201).json({
+                user_details: user_details,
+                token: token
+            });
+
+
+        } catch (error) {
+            console.log(error);
+            res.status(500).send("Server Error");
+        }
+        // res.send('reg ok');
+    });
+
+    app.post('/login', async (req, res) => {
+        const { email, password } = req.body;
+        if (!(email && password)) {
+            return res.status(400).send("All inputs are required");
+        }
+
+        const [user] = await db.query('SELECT * FROM User WHERE email = ?', [email]);
+        if (user.length != 1) {
+            return res.status(404).send("No user found");
+        }
+        const encryptedPassword = user[0].password;
+        if (await bcrypt.compare(password, encryptedPassword)) {
+            let user_details = user[0];
+            delete user_details['password'];
+            console.log(user_details);
+            
+            const token = jwt.sign(user_details, process.env.TOKEN_SECRET, jwtConfig);
+            res.status(200).json({
+                user_details: user_details,
+                token: token
+            });
+        } else {
+            res.status(404).send('Error, email or password invalid');
+        }
+    });
 }
+
+module.exports = authentication;
