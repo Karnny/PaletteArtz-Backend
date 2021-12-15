@@ -6,7 +6,7 @@ const jwtConfig = require('../config/jwtConfig');
 function authentication({ app, auth, db, mysql }) {
 
     async function isOldUser(email) {
-        const sql = `SELECT * FROM User WHERE email = ?`;
+        const sql = `SELECT * FROM palette_artz_db.user WHERE email = ?`;
         const [user] = await db.query(sql, [email]);
         console.log('User:', user);
         if (user.length != 0) {
@@ -17,7 +17,7 @@ function authentication({ app, auth, db, mysql }) {
     }
 
     async function createWallet () {
-        const sql = `INSERT INTO Wallet (balance) VALUES (0)`
+        const sql = `INSERT INTO palette_artz_db.wallet (balance) VALUES (0)`
         const [wallet, fields] = await db.query(sql);
         console.log('Wallet: ', wallet.insertId);
         if (!wallet.insertId) {
@@ -47,7 +47,7 @@ function authentication({ app, auth, db, mysql }) {
             const walletId = await createWallet();
 
             const sqlInsertUser = `
-            INSERT INTO User (username, email, password, wallet_id, Tag_id) 
+            INSERT INTO palette_artz_db.user (username, email, password, wallet_id, Tag_id) 
             VALUES (?,?,?,?,?)
             `;
             const [insertUserResult] =  await db.query(sqlInsertUser, [username, email, encryptedPassword, walletId, 0]);
@@ -83,7 +83,7 @@ function authentication({ app, auth, db, mysql }) {
             return res.status(400).send("All inputs are required");
         }
 
-        const [user] = await db.query('SELECT * FROM User WHERE email = ?', [email]);
+        const [user] = await db.query('SELECT * FROM palette_artz_db.user WHERE email = ?', [email]);
         if (user.length != 1) {
             return res.status(404).send("No user found");
         }

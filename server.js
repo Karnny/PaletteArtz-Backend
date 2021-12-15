@@ -14,9 +14,9 @@ app.get('/', (req, res) => {
     res.send('Welcome!!');
 });
 
-require('./model/authentication')({app, auth, db, mysql})
+require('./model/authentication')({app, auth, db, mysql});
 app.use(auth);  // forcing every service to auth after this line
-
+require('./model/profile')({app, auth, db, mysql});
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
