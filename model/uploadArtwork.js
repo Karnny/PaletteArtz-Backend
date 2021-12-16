@@ -97,18 +97,27 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
                     }
                 }
 
+                let dbArtTypeId;
+                if (!Number.isInteger(parseInt(art_type))) {
+                    dbArtTypeId = await getArtType({ name: art_type });
+                    console.log(`Searching ArtType ${art_type}: `, dbArtTypeId);
 
-                const dbArtTypeId = await getArtType({ name: art_type });
-                console.log(`Searching ArtType ${art_type}: `, dbArtTypeId);
-                if (dbArtTypeId.length == 0) {
-                    const createdArtType = await createArtType(art_type);
-                    if (createdArtType.affectedRows == 0) {
-                        throw Error("Cannot create Art Type");
+                    if (dbArtTypeId.length == 0) {
+                        const createdArtType = await createArtType(art_type);
+                        console.log(`Creating ArtType: ${art_type} id`, createdArtType.insertId);
+                        if (createdArtType.affectedRows == 0) {
+                            throw Error("Cannot create Art Type");
+                        }
+
+                        toInsertArtTypeId = createdArtType.insertId;
+                    } else {
+                        toInsertArtTypeId = dbArtTypeId[0].id;
                     }
-                    toInsertArtTypeId = createdArtType.InsertId;
                 } else {
-                    toInsertArtTypeId = dbArtTypeId[0].id;
+                    toInsertArtTypeId = parseInt(art_type);
                 }
+
+
 
 
                 /////////////// INSERT POST //////////////
