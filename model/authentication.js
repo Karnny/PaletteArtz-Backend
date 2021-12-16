@@ -103,6 +103,42 @@ function authentication({ app, auth, db, mysql }) {
             res.status(404).send('Error, email or password invalid');
         }
     });
+
+    app.post('/api/change_password', auth, async (req, res) => {
+        let { old_password, new_password } = req.body;
+
+        if (!(old_password && new_password)) {
+            return res.status(400).send("Old and new password are required");
+        }
+
+        try {
+            const sqlGetDBPassword = `
+            SELECT * FROM palette_artz_db.user us WHERE us.id = ?
+            `;
+            const [getDBPasswordResult] = await db.query(sqlGetDBPassword, [req.user.id]);
+            const encryptedPassword = getDBPasswordResult[0].password; 
+            if (await bcrypt.compare(old_password, encryptedPassword)) {
+                const newEncryptedPassword = await bcrypt.hash(new_password, 10);
+
+                const sqlUpdatePassword = `
+                UPDATE palette_artz_db.user us SET us.password = ?
+                WHERE us.id = ?
+                `;
+
+                const [updateResult] = await db.query(sqlUpdatePassword, [newEncryptedPassword, req.user.id]);
+                if (updateResult.affectedRows != 1) {
+                    throw Error("Cannot update password");
+                }
+
+                res.send("Password changed.");
+            } else {
+                return res.status(400).send("Old password isn't match");
+            }
+        } catch (error) {
+            console.log(error);
+            res.status(500).send("Server Error");
+        }
+    });
 }
 
 module.exports = authentication;
