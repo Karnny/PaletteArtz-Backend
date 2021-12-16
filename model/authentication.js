@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const jwtConfig = require('../config/jwtConfig');
 
+
 function authentication({ app, auth, db, mysql }) {
 
     async function isOldUser(email) {

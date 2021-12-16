@@ -30,7 +30,7 @@ const requiredObject = {
 };
 
 require('./model/authentication')(requiredObject);
-app.use(auth);  // forcing every service to auth after this line
+// app.use(auth);  // forcing every service to auth after this line
 require('./model/profile')(requiredObject);
 require('./model/uploadArtwork')(requiredObject);
 

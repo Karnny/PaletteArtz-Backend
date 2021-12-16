@@ -1,5 +1,6 @@
 const { query } = require('express');
 const uploadConfig = require('../config/uploadConfig');
+const auth = require("../middleware/auth");
 
 function uploadArtwork({ app, auth, db, mysql, upload }) {
 
@@ -136,7 +137,7 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
 
     }
 
-    app.post('/api/uploadArtwork', upload.single(uploadConfig.multerUploadImageName),
+    app.post('/api/uploadArtwork', auth, upload.single(uploadConfig.multerUploadImageName),
         async (req, res) => {
             const file = req.file;
             let { title, description = '', tags, art_type } = req.body;
@@ -252,7 +253,7 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
 
                 ///////////////// INSERT POST_HAS_TAG //////////////
 
-                console.log(toInsertTagIds);
+                // console.log(toInsertTagIds);
                 if (tags) {
                     // contruct [[post_id, tag_id], [post_id, tag_id]]
                     let postHasTagInsertArr = [];

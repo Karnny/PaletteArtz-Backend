@@ -1,8 +1,9 @@
 const uploadConfig = require('../config/uploadConfig');
+const auth = require("../middleware/auth");
 
 function profile({ app, auth, db, mysql, upload }) {
 
-    app.get('/api/profile', async (req, res) => {
+    app.get('/api/profile', auth, async (req, res) => {
         console.log(req.user);
 
         try {
@@ -25,7 +26,7 @@ function profile({ app, auth, db, mysql, upload }) {
     });
 
 
-    app.post('/api/profile', async (req, res) => {
+    app.post('/api/profile', auth, async (req, res) => {
         let { username, email, phone_number = "", gender = "", bio = "", tags = "" } = req.body;
 
         console.log(req.body);
@@ -64,7 +65,7 @@ function profile({ app, auth, db, mysql, upload }) {
 
     });
 
-    app.get('/api/profile/profileImage', async (req, res) => {
+    app.get('/api/profile/profileImage', auth, async (req, res) => {
 
         try {
             const sql = `SELECT us.profile_image FROM palette_artz_db.user us WHERE us.id = ?`;
@@ -83,7 +84,7 @@ function profile({ app, auth, db, mysql, upload }) {
         }
     });
 
-    app.post('/api/profile/profileImage', upload.single(uploadConfig.multerUploadImageName),
+    app.post('/api/profile/profileImage', auth, upload.single(uploadConfig.multerUploadImageName),
         async (req, res) => {
             const file = req.file;
             if (!file) {
@@ -114,7 +115,7 @@ function profile({ app, auth, db, mysql, upload }) {
 
         });
 
-        app.get('/api/profile/coverImage', async (req, res) => {
+        app.get('/api/profile/coverImage', auth, async (req, res) => {
 
             try {
                 const sql = `SELECT us.cover_image FROM palette_artz_db.user us WHERE us.id = ?`;
@@ -133,7 +134,7 @@ function profile({ app, auth, db, mysql, upload }) {
             }
         });
 
-        app.post('/api/profile/coverImage', upload.single(uploadConfig.multerUploadImageName),
+        app.post('/api/profile/coverImage', auth, upload.single(uploadConfig.multerUploadImageName),
         async (req, res) => {
             const file = req.file;
             if (!file) {
