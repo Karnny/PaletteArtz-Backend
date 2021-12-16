@@ -1,5 +1,4 @@
 const uploadConfig = require('../config/uploadConfig');
-const auth = require("../middleware/auth");
 
 function profile({ app, auth, db, mysql, upload }) {
 
