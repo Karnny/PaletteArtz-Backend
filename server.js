@@ -34,6 +34,7 @@ require('./model/authentication')(requiredObject);
 require('./model/profile')(requiredObject);
 require('./model/uploadArtwork')(requiredObject);
 require('./model/homepage')(requiredObject);
+require('./model/postDetails')(requiredObject);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
