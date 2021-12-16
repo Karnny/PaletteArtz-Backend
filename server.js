@@ -25,11 +25,14 @@ app.get('/', (req, res) => {
     res.send('Welcome!!');
 });
 
+const requiredObject = {
+    app, auth, db, mysql, upload
+};
 
-
-require('./model/authentication')({ app, auth, db, mysql });
+require('./model/authentication')(requiredObject);
 app.use(auth);  // forcing every service to auth after this line
-require('./model/profile')({ app, auth, db, mysql, upload });
+require('./model/profile')(requiredObject);
+require('./model/uploadArtwork')(requiredObject);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
