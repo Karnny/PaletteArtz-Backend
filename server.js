@@ -33,6 +33,7 @@ require('./model/authentication')(requiredObject);
 // app.use(auth);  // forcing every service to auth after this line
 require('./model/profile')(requiredObject);
 require('./model/uploadArtwork')(requiredObject);
+require('./model/homepage')(requiredObject);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
