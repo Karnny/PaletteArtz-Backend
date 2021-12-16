@@ -15,7 +15,7 @@ function homepage({ app, auth, db, mysql, upload }) {
             const allArtType = await getArtType();
             let artType = allArtType.map((e) => {
                 let edit = e;
-                edit.type_image_path = uploadConfig.multerImageDestination + edit.type_image_name;
+                edit.type_image_path = uploadConfig.localChannelImagePath + edit.type_image_name;
                 return edit;
             });
             res.json(artType);
