@@ -15,6 +15,8 @@ function profile({ app, auth, db, mysql, upload }) {
 
             let userDetails = userProfile[0];
             delete userDetails['password'];
+            userDetails.profile_image = uploadConfig.multerImageDestination + userDetails.profile_image;
+            userDetails.cover_image = uploadConfig.multerImageDestination + userDetails.cover_image;
 
             res.json(userDetails);
 
