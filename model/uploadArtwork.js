@@ -6,7 +6,14 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
     async function getArtType({ id, name }) {
         try {
 
-            if (id) {
+            if (id == null && name == null) {
+                const sqlGet = `
+                SELECT * FROM palette_artz_db.art_type
+                `;
+                const [result] = await db.query(sqlGet);
+                return result;
+
+            } else if (id) {
                 const sqlGetId = `
                     SELECT * FROM palette_artz_db.art_type at
                     WHERE at.id = ?
@@ -29,20 +36,6 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
             throw Error("Error while getting Art Type");
         }
 
-    }
-
-    async function getArtType() {
-        try {
-            const sqlGet = `
-                    SELECT * FROM palette_artz_db.art_type
-                    `;
-            const [result] = await db.query(sqlGet);
-            return result;
-
-        } catch (error) {
-            console.log(error);
-            throw Error("Error while getting Art Type");
-        }
     }
 
     async function createArtType(name) {
@@ -73,17 +66,28 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
     }
 
     async function getTag(opt) {
-        const { id, name } = opt;
+        let id, name;
+        if (opt) {
+            id = opt.id;
+            name = opt.name
+        }
+        
         try {
             if (Array.isArray(name)) {
+                name = [name];
                 const sqlGetTagsByName = `
                 SELECT * FROM palette_artz_db.tag WHERE tag_name IN ?
                 `;
                 const [results] = await db.query(sqlGetTagsByName, [name]);
                 return results;
             } else {
-
-                if (id) {
+                if (id == null && name == null) {
+                    const sqlGet = `
+                    SELECT * FROM palette_artz_db.tag
+                    `;
+                    const [result] = await db.query(sqlGet);
+                    return result;
+                } else if (id) {
                     const sqlGet = `
                     SELECT * FROM palette_artz_db.tag tag
                     WHERE tag.id = ?
@@ -105,25 +109,15 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
         }
     }
 
-    async function getTag() {
-        try {
-
-            const sqlGet = `
-                SELECT * FROM palette_artz_db.tag
-                `;
-            const [result] = await db.query(sqlGet);
-            return result;
-        } catch (error) {
-            console.log(error);
-            throw Error("Error while getting Tag");
-        }
-    }
 
     async function createTag(name) {
         try {
             if (Array.isArray(name)) {
+                // for bulk insertion, this array need to be like [[item1], [item2]]
+                name = name.map(e => [e]);
+                console.log(name);
                 const sqlInsertTags = `
-                INSERT INTO palette_artz_db.tag tag (tag.tag_name) VALUES ?
+                INSERT INTO palette_artz_db.tag (tag_name) VALUES ?
                 `;
                 const [tagsInsertResult] = await db.query(sqlInsertTags, [name]);
                 return tagsInsertResult;
@@ -180,39 +174,43 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
                     if (Array.isArray(tags)) {
                         console.log('Tag is Array..');
                         let tagsToCreate = [];
-                        // check if each tag is not exist id DB
+                        // check if each tag is exist in DB
                         const databaseTags = await getTag();
-                        console.log('databastTags: ', databaseTags);
-                        for (const tag of tags) {
-                            for (const dbTag of databaseTags) {
-                                console.log(tag, ' != ', dbTag.tag_name, tag!=dbTag.tag_name);
-                                let isFound;
-                                if (tag != dbTag.tag_name) {
-                                    // put all tags that not exist in DB in array
-                                    isFound = tag
-                                    tagsToCreate.push(isFound);
-                                } else {
-                                    toInsertTagIds.push(dbTag.id);
-                                    break;
+                        // console.log('databastTags: ', databaseTags);
+                        for (const tag in tags) {
+                            for (const dbTag in databaseTags) {
+
+                                if (tags[tag] == databaseTags[dbTag].tag_name) {
+
+                                    tags.splice(tag, 1);
+                                    toInsertTagIds.push(databaseTags[dbTag].id);
                                 }
-                                
+
                             }
                         }
+                        // tagsToCreate.push(tag);
+                        tagsToCreate = [...tags];
 
                         console.log('Tags to create: ', tagsToCreate);
                         console.log('Tag IDs ready to insert: ', toInsertTagIds);
 
-                        const createdTagsResult = createTag(tagsToCreate);
-                        console.log('Created tag rows: ', createdTagsResult.affectedRows);
-                        if (createdTagsResult.affectedRows != tagsToCreate.length) {
-                            throw Error("Error creating tags");
-                        } else {
 
-                            let newlyCreatedTags = await getTag({ name: tagsToCreate });
-                            for (const tagId of newlyCreatedTags) {
-                                toInsertTagIds.push(tagId.id);
+                        // If there are new tags to create
+                        if (tagsToCreate.length != 0) {
+                            const createdTagsResult = await createTag(tagsToCreate);
+                            console.log('Created tag rows: ', createdTagsResult.affectedRows);
+                            if (createdTagsResult.affectedRows != tagsToCreate.length) {
+                                throw Error("Error creating tags");
+                            } else {
+
+                                let newlyCreatedTags = await getTag({ name: tagsToCreate });
+                                console.log(`Newly Created Tags: `, newlyCreatedTags);
+                                for (const tagId of newlyCreatedTags) {
+                                    toInsertTagIds.push(tagId.id);
+                                }
                             }
                         }
+
                     } else {
                         console.log('Tag is :', tags);
                         // if there are one tag to check..
@@ -227,7 +225,7 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
 
 
                 const dbArtTypeId = await getArtType({ name: art_type });
-                console.log(dbArtTypeId);
+                console.log(`Searching ArtType ${art_type}: `, dbArtTypeId);
                 if (dbArtTypeId.length == 0) {
                     const createdArtType = await createArtType(art_type);
                     if (createdArtType.affectedRows == 0) {
