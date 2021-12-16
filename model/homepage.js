@@ -15,7 +15,6 @@ function homepage({ app, auth, db, mysql, upload }) {
         if (type_name) {
             name = type_name;
         }
-        
 
         try {
             if (id == null && name == null) {
@@ -34,8 +33,13 @@ function homepage({ app, auth, db, mysql, upload }) {
                 const sqlGetPostsFromArtTypeId = `
                 SELECT * FROM palette_artz_db.post WHERE art_type_id = ?
                 `;
-                const [getPostsResults] = await db.query(sqlGetPostsFromArtTypeId, [id]);
-                res.json(artType);
+                let [getPostsResults] = await db.query(sqlGetPostsFromArtTypeId, [id]);
+                getPostsResults = getPostsResults.map((e) => {
+                    let edit = e;
+                    edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
+                    return edit;
+                });
+                res.json(getPostsResults);
 
             } else if (name) {
                 // GET Posts from channel name
@@ -45,11 +49,15 @@ function homepage({ app, auth, db, mysql, upload }) {
                 JOIN palette_artz_db.art_type at ON pt.art_type_id = at.id
                 WHERE at.type_name = ?
                 `;
-
                 const [getPostsResults] = await db.query(sqlGetPostsFromArtTypeName, [name]);
+                getPostsResults = getPostsResults.map((e) => {
+                    let edit = e;
+                    edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
+                    return edit;
+                });
                 res.json(getPostsResults);
             }
-            
+
 
         } catch (error) {
             console.log(error);
@@ -70,7 +78,7 @@ function homepage({ app, auth, db, mysql, upload }) {
                 edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
                 return edit;
             });
-            res.json(post); 
+            res.json(post);
 
         } catch (error) {
             console.log(error);
