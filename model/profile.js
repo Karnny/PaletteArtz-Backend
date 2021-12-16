@@ -26,6 +26,23 @@ function profile({ app, auth, db, mysql, upload }) {
 
     });
 
+    app.get('/api/profile/artwork', auth, async (req, res) => {
+
+        try {
+            const sqlGetUserArtworks = `
+            SELECT * FROM palette_artz_db.post pt
+            WHERE pt.user_id = ?
+            `;
+
+            const [getUserArtworksResults] = await db.query(sqlGetUserArtworks, [req.user.id]);
+            res.json(getUserArtworksResults);
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send("Server Error");
+        }
+    });
+
 
     app.post('/api/profile', auth, async (req, res) => {
         let { username, email, phone_number = "", gender = "", bio = "", tags = "" } = req.body;
@@ -116,26 +133,26 @@ function profile({ app, auth, db, mysql, upload }) {
 
         });
 
-        app.get('/api/profile/coverImage', auth, async (req, res) => {
+    app.get('/api/profile/coverImage', auth, async (req, res) => {
 
-            try {
-                const sql = `SELECT us.cover_image FROM palette_artz_db.user us WHERE us.id = ?`;
-                const [userCoverImage] = await db.query(sql, [req.user.id]);
-                if (userCoverImage.length != 1) {
-                    throw Error("Cannot get user profile image");
-                }
-    
-                res.json({
-                    userDetails: req.user,
-                    image: uploadConfig.multerImageDestination + userCoverImage[0].cover_image
-                });
-            } catch (error) {
-                console.log(error);
-                return res.status(500).send(error || "Server Error");
+        try {
+            const sql = `SELECT us.cover_image FROM palette_artz_db.user us WHERE us.id = ?`;
+            const [userCoverImage] = await db.query(sql, [req.user.id]);
+            if (userCoverImage.length != 1) {
+                throw Error("Cannot get user profile image");
             }
-        });
 
-        app.post('/api/profile/coverImage', auth, upload.single(uploadConfig.multerUploadImageName),
+            res.json({
+                userDetails: req.user,
+                image: uploadConfig.multerImageDestination + userCoverImage[0].cover_image
+            });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send(error || "Server Error");
+        }
+    });
+
+    app.post('/api/profile/coverImage', auth, upload.single(uploadConfig.multerUploadImageName),
         async (req, res) => {
             const file = req.file;
             if (!file) {
