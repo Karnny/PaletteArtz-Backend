@@ -48,10 +48,10 @@ function authentication({ app, auth, db, mysql }) {
             const walletId = await createWallet();
 
             const sqlInsertUser = `
-            INSERT INTO palette_artz_db.user (username, email, password, wallet_id, Tag_id) 
+            INSERT INTO palette_artz_db.user (username, email, password, wallet_id, tags) 
             VALUES (?,?,?,?,?)
             `;
-            const [insertUserResult] =  await db.query(sqlInsertUser, [username, email, encryptedPassword, walletId, 0]);
+            const [insertUserResult] =  await db.query(sqlInsertUser, [username, email, encryptedPassword, walletId, '']);
             if (!insertUserResult.insertId) {
                 return res.status(500).send("Cannot create user");
             }
