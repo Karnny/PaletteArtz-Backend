@@ -15,7 +15,7 @@ function gift({ app, auth, db, mysql, upload }) {
 
             let [getUserBalanceResult] = await db.query(sqlGetUserBalance, [req.user.id]);
             getUserBalanceResult = getUserBalanceResult[0]
-            
+
             // get all user gifts
             const sqlGetUserGifts = `
             SELECT gf.gift_name, gf.gift_price, gf.gift_image_name, uhg.gift_id, uhg.amount FROM palette_artz_db.gift gf
@@ -24,8 +24,14 @@ function gift({ app, auth, db, mysql, upload }) {
             WHERE uhg.user_id = ?
             `;
             let [getUserGiftsResult] = await db.query(sqlGetUserGifts, [req.user.id]);
-            
-            getUserBalanceResult.total_gift_value = (()=> {
+            getUserGiftsResult = getUserGiftsResult.map((e) => {
+                let edit = e;
+                edit.gift_image_path = uploadConfig.localGiftImagePath + edit.gift_image_name;
+ 
+                return edit;
+            });
+
+            getUserBalanceResult.total_gift_value = (() => {
                 let totalValue = 0;
                 getUserGiftsResult.forEach((gift) => {
                     totalValue += gift.gift_price * gift.amount;
@@ -36,6 +42,51 @@ function gift({ app, auth, db, mysql, upload }) {
                 userDetails: getUserBalanceResult,
                 userGifts: getUserGiftsResult
             });
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send("Server Error");
+        }
+    });
+
+    app.get('/api/user_gift', auth, async (req, res) => {
+
+        try {
+            const sqlGetUserGifts = `
+            SELECT gf.gift_name, gf.gift_price, gf.gift_image_name, uhg.gift_id, uhg.amount FROM palette_artz_db.gift gf
+            JOIN palette_artz_db.user_has_gift uhg
+            ON gf.id = uhg.gift_id
+            WHERE uhg.user_id = ?
+            `;
+            let [getUserGiftsResult] = await db.query(sqlGetUserGifts, [req.user.id]);
+            getUserGiftsResult = getUserGiftsResult.map((e) => {
+                let edit = e;
+                edit.gift_image_path = uploadConfig.localGiftImagePath + edit.gift_image_name;
+ 
+                return edit;
+            });
+            res.json(getUserGiftsResult);
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send("Server Error");
+        }
+
+
+    });
+
+    app.get('/api/gift', auth, async (req, res) => {
+        try {
+            const sqlGetAllGifts = `
+            SELECT * FROM palette_artz_db.gift
+            `;
+            let [getAllGiftResult] = await db.query(sqlGetAllGifts);
+            getAllGiftResult = getAllGiftResult.map((e) => {
+                let edit = e;
+                edit.gift_image_path = uploadConfig.localGiftImagePath + edit.gift_image_name;
+ 
+                return edit;
+            });
+            res.json(getAllGiftResult);
 
         } catch (error) {
             console.log(error);
@@ -145,8 +196,9 @@ function gift({ app, auth, db, mysql, upload }) {
         try {
             // check if gifts are enough to send
             const sqlCheckGift = `
-            SELECT * FROM palette_artz_db.user_has_gift uhg
-            WHERE uhg.gift_id = ? AND uhg.user_id ?
+            SELECT uhg.*, gf.gift_price FROM palette_artz_db.user_has_gift uhg
+            JOIN palette_artz_db.gift gf ON uhg.gift_id = gf.id
+            WHERE uhg.gift_id = ? AND uhg.user_id = ?
             `;
             const [checkGiftResult] = await db.query(sqlCheckGift, [gift_id, req.user.id]);
             const senderGiftAmount = checkGiftResult[0].amount;
@@ -160,22 +212,31 @@ function gift({ app, auth, db, mysql, upload }) {
             SET uhg.amount = uhg.amount - ?
             WHERE uhg.gift_id = ? AND user_id = ?
             `;
-            const [deductGiftResult] = await db.query(sqlDeductGift, [amount, gift_id,]);
+            const [deductGiftResult] = await db.query(sqlDeductGift, [amount, gift_id, req.user.id]);
             if (deductGiftResult.affectedRows != 1) {
                 throw Error("Cannot deduct gift");
             }
 
             // give gift to reciever but it convert to account balance
+            // increase reciever's total income
             const sqlTransferGift = `
             UPDATE palette_artz_db.wallet wl
             JOIN palette_artz_db.user us ON us.wallet_id = wl.id
-            SET wl.balance = wl.balance + ?
+            SET wl.balance = wl.balance + ?, wl.total_income = wl.total_income + ?
             WHERE us.id = ?
             `;
+            const totalGiftValue = checkGiftResult[0].gift_price * amount;
+            const [transferGiftResult] = await db.query(sqlTransferGift, [totalGiftValue, totalGiftValue, user_id]);
+            if (transferGiftResult.affectedRows != 1) {
+                return res.status(400).send("Cannot send gift to that person");
+            }
 
-            const [transferGiftResult] = await db.query(sqlTransferGift, []);
+            res.send("Transaction complete");
+
+
         } catch (error) {
-
+            console.log(error);
+            return res.status(500).send("Server Error");
         }
 
 
