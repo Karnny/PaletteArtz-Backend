@@ -146,9 +146,9 @@ function gift({ app, auth, db, mysql, upload }) {
             // check if user already have certain gift
             const sqlGetUserHasGift = `
             SELECT * FROM palette_artz_db.user_has_gift uhg
-            WHERE uhg.gift_id = ?
+            WHERE uhg.gift_id = ? AND uhg.user_id = ?
             `;
-            const [getUserHasGiftResult] = await db.query(sqlGetUserHasGift, [id]);
+            const [getUserHasGiftResult] = await db.query(sqlGetUserHasGift, [id, req.user.id]);
             if (getUserHasGiftResult.length != 0) {
                 const sqlIncreaseGift = `
                 UPDATE palette_artz_db.user_has_gift uhg
