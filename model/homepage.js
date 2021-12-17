@@ -68,7 +68,7 @@ function homepage({ app, auth, db, mysql, upload }) {
                 JOIN palette_artz_db.art_type at ON pt.art_type_id = at.id
                 WHERE at.type_name = ?
                 `;
-                const [getPostsResults] = await db.query(sqlGetPostsFromArtTypeName, [name]);
+                let [getPostsResults] = await db.query(sqlGetPostsFromArtTypeName, [name]);
                 getPostsResults = getPostsResults.map((e) => {
                     let edit = e;
                     edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
