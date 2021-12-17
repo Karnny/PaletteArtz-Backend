@@ -201,6 +201,10 @@ function gift({ app, auth, db, mysql, upload }) {
             WHERE uhg.gift_id = ? AND uhg.user_id = ?
             `;
             const [checkGiftResult] = await db.query(sqlCheckGift, [gift_id, req.user.id]);
+            // check if that sender doesn't have that gift
+            if (checkGiftResult.length == 0) {
+                return res.status(404).send("Sorry, you don't have that gift yet.");
+            }
             const senderGiftAmount = checkGiftResult[0].amount;
             if (senderGiftAmount < amount) {
                 return res.status(400).send("You don't have enough gift to send");
