@@ -123,8 +123,8 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
                 /////////////// INSERT POST //////////////
                 const sqlInsertPost = `
                 INSERT INTO palette_artz_db.post 
-                (title, image_name, description, art_type_id, user_id) 
-                VALUES (?,?,?,?,?)
+                (title, image_name, description, date_time, art_type_id, user_id) 
+                VALUES (?,?,?, CURTIME(),?,?)
                 `;
                 const [insertPostResult] = await db.query(sqlInsertPost, [title, file.filename, description, toInsertArtTypeId, req.user.id]);
                 if (insertPostResult.affectedRows != 1) {

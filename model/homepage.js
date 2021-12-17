@@ -70,12 +70,20 @@ function homepage({ app, auth, db, mysql, upload }) {
 
         try {
             const sqlGetPost = `
-            SELECT * FROM palette_artz_db.post
+            SELECT pt.*, us.username, at.type_name, 
+	        (SELECT GROUP_CONCAT(CONCAT(tg.tag_name) SEPARATOR ',') 
+            FROM palette_artz_db.post_has_tag pht 
+            JOIN palette_artz_db.tag tg ON pht.tag_id = tg.id
+            WHERE pht.post_id = pt.id) AS tags_name 
+            FROM palette_artz_db.post pt
+            JOIN palette_artz_db.user us ON pt.user_id = us.id
+            JOIN palette_artz_db.art_type at ON pt.art_type_id = at.id
             `;
             const [getPostResult] = await db.query(sqlGetPost);
             let post = getPostResult.map((e) => {
                 let edit = e;
                 edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
+                edit.tags_name = edit.tags_name.split(',');
                 return edit;
             });
             res.json(post);

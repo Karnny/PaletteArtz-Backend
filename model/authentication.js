@@ -18,7 +18,7 @@ function authentication({ app, auth, db, mysql }) {
     }
 
     async function createWallet () {
-        const sql = `INSERT INTO palette_artz_db.wallet (balance) VALUES (0)`
+        const sql = `INSERT INTO palette_artz_db.wallet (balance) VALUES (50000)`
         const [wallet, fields] = await db.query(sql);
         console.log('Wallet: ', wallet.insertId);
         if (!wallet.insertId) {
