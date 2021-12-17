@@ -137,7 +137,7 @@ async function createTag(name) {
             return tagsInsertResult;
         } else {
             const sqlInsert = `
-            INSERT INTO palette_artz_db.tag tag (tag.tag_name) VALUES (?)
+            INSERT INTO palette_artz_db.tag (tag_name) VALUES (?)
             `;
 
             const [insertResult] = await db.query(sqlInsert, [name]);

@@ -45,7 +45,11 @@ function homepage({ app, auth, db, mysql, upload }) {
                 getPostsResults = getPostsResults.map((e) => {
                     let edit = e;
                     edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
-                    edit.tags_name = edit.tags_name.split(',');
+                    if (edit.tags_name) {
+                        edit.tags_name = edit.tags_name.split(',');
+                    } else {
+                        edit.tags_name = [''];
+                    }
                     return edit;
                 });
                 res.json(getPostsResults);
@@ -68,7 +72,11 @@ function homepage({ app, auth, db, mysql, upload }) {
                 getPostsResults = getPostsResults.map((e) => {
                     let edit = e;
                     edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
-                    edit.tags_name = edit.tags_name.split(',');
+                    if (edit.tags_name) {
+                        edit.tags_name = edit.tags_name.split(',');
+                    } else {
+                        edit.tags_name = [''];
+                    }
                     return edit;
                 });
                 res.json(getPostsResults);
@@ -99,7 +107,12 @@ function homepage({ app, auth, db, mysql, upload }) {
             let post = getPostResult.map((e) => {
                 let edit = e;
                 edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
-                edit.tags_name = edit.tags_name.split(',');
+                if (edit.tags_name) {
+                    edit.tags_name = edit.tags_name.split(',');
+                } else {
+                    edit.tags_name = [''];
+                }
+                
                 return edit;
             });
             res.json(post);

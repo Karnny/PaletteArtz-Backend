@@ -21,8 +21,8 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
                 return res.status(400).send("Please upload a picture");
             }
 
-            if (!(title && art_type)) {
-                return res.status(400).send("Please input art title and type");
+            if (!(title && art_type && tags)) {
+                return res.status(400).send("Please input art title, tags and type");
             }
 
             art_type = art_type.trim();
@@ -32,18 +32,17 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
             // console.log(file);
 
             try {
-                tags = tags.replace(/\s+/g, ''); // eliminate all spaces
-                tags = tags.split(',');
-                if (tags.length == 1) {
-                    tags = tags[0];
-                }
 
                 console.log('Tags:', tags);
                 // use to create tags with post
                 let toInsertTagIds = [];
                 let toInsertArtTypeId;
                 if (tags) {
-
+                    tags = tags.replace(/\s+/g, ''); // eliminate all spaces
+                    tags = tags.split(',');
+                    if (tags.length == 1) {
+                        tags = tags[0];
+                    }
                     // check if there are more than 1 tag
                     if (Array.isArray(tags)) {
                         console.log('Tag is Array..');
@@ -89,9 +88,10 @@ function uploadArtwork({ app, auth, db, mysql, upload }) {
                         console.log('Tag is :', tags);
                         // if there are one tag to check..
                         const tagNameInDB = await getTag({ name: tags });
-                        if (tagNameInDB.length != 0) {
+                        if (tagNameInDB.length == 0) {
                             toInsertTagIds.push(await createTag(tags).insertId);
                         } else {
+                            
                             toInsertTagIds.push(tagNameInDB[0].id);
                         }
                     }
