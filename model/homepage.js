@@ -31,12 +31,21 @@ function homepage({ app, auth, db, mysql, upload }) {
                 // GET Posts from channel id
                 console.log('Getting all posts from art_type id ', id);
                 const sqlGetPostsFromArtTypeId = `
-                SELECT * FROM palette_artz_db.post WHERE art_type_id = ?
+                SELECT pt.*, us.username, at.type_name, 
+	            (SELECT GROUP_CONCAT(CONCAT(tg.tag_name) SEPARATOR ',') 
+                FROM palette_artz_db.post_has_tag pht 
+                JOIN palette_artz_db.tag tg ON pht.tag_id = tg.id
+                WHERE pht.post_id = pt.id) AS tags_name 
+                FROM palette_artz_db.post pt
+                JOIN palette_artz_db.user us ON pt.user_id = us.id
+                JOIN palette_artz_db.art_type at ON pt.art_type_id = at.id
+                WHERE at.id = ?
                 `;
                 let [getPostsResults] = await db.query(sqlGetPostsFromArtTypeId, [id]);
                 getPostsResults = getPostsResults.map((e) => {
                     let edit = e;
                     edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
+                    edit.tags_name = edit.tags_name.split(',');
                     return edit;
                 });
                 res.json(getPostsResults);
@@ -45,7 +54,13 @@ function homepage({ app, auth, db, mysql, upload }) {
                 // GET Posts from channel name
                 console.log('Getting all posts from art_type name ', name);
                 const sqlGetPostsFromArtTypeName = `
-                SELECT * FROM palette_artz_db.post pt
+                SELECT pt.*, us.username, at.type_name, 
+	            (SELECT GROUP_CONCAT(CONCAT(tg.tag_name) SEPARATOR ',') 
+                FROM palette_artz_db.post_has_tag pht 
+                JOIN palette_artz_db.tag tg ON pht.tag_id = tg.id
+                WHERE pht.post_id = pt.id) AS tags_name 
+                FROM palette_artz_db.post pt
+                JOIN palette_artz_db.user us ON pt.user_id = us.id
                 JOIN palette_artz_db.art_type at ON pt.art_type_id = at.id
                 WHERE at.type_name = ?
                 `;
@@ -53,6 +68,7 @@ function homepage({ app, auth, db, mysql, upload }) {
                 getPostsResults = getPostsResults.map((e) => {
                     let edit = e;
                     edit.image_path = uploadConfig.multerImageDestination + edit.image_name;
+                    edit.tags_name = edit.tags_name.split(',');
                     return edit;
                 });
                 res.json(getPostsResults);
