@@ -45,9 +45,9 @@ function store({ app, auth, db, mysql, upload }) {
             const sqlGetUserBalance = `
             SELECT wl.* FROM palette_artz_db.wallet wl
             JOIN palette_artz_db.user us ON us.wallet_id = wl.id
-            WHERE us.user_id = ?
+            WHERE us.id = ?
             `;
-            const [getUserBalanceResult] = await db.query(sqlGetUserBalance, [id]);
+            const [getUserBalanceResult] = await db.query(sqlGetUserBalance, [req.user.id]);
             const userBalance = parseFloat(getUserBalanceResult[0].balance);
             const eachGiftPrice = parseFloat(getGiftResult[0].gift_price);
             const totalGiftPrice = eachGiftPrice * amount;
@@ -64,7 +64,7 @@ function store({ app, auth, db, mysql, upload }) {
             SET wl.balance = wl.balance - ?
             WHERE us.id = ?
             `;
-            const [deductUserBalanceResult] = await db.query(sqlDeductUserBalance, totalGiftPrice, req.user.id);
+            const [deductUserBalanceResult] = await db.query(sqlDeductUserBalance, [totalGiftPrice, req.user.id]);
             if (deductUserBalanceResult.affectedRows != 1) {
                 throw Error("Cannot deduct user balance");
             }
@@ -75,8 +75,12 @@ function store({ app, auth, db, mysql, upload }) {
             (user_id, gift_id, amount) 
             VALUES (?,?,?)
             `;
-            const [addGiftToUserResult] = await db.query(sqlAddGiftToUser, req.user.id, amount);
+            const [addGiftToUserResult] = await db.query(sqlAddGiftToUser, [req.user.id, id, amount]);
+            if (addGiftToUserResult.affectedRows != 1) {
+                throw Error("Cannot add gift for user");
+            }
 
+            res.send("Transction complete.");
 
         } catch (error) {
 
