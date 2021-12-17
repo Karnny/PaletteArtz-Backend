@@ -131,6 +131,56 @@ function gift({ app, auth, db, mysql, upload }) {
         }
     });
 
+    app.post('/api/send_gift', auth, async (req, res) => {
+        let { gift_id, amount, user_id } = req.body;
+
+        if (!(gift_id && amount && user_id)) {
+            return res.status(400).send("gift_id, amount, user_id are required!");
+        }
+
+        if (user_id == req.user.id) {
+            return res.status(400).send("You cannot send gift(s) to your self dude, take care of yourself.");
+        }
+
+        try {
+            // check if gifts are enough to send
+            const sqlCheckGift = `
+            SELECT * FROM palette_artz_db.user_has_gift uhg
+            WHERE uhg.gift_id = ? AND uhg.user_id ?
+            `;
+            const [checkGiftResult] = await db.query(sqlCheckGift, [gift_id, req.user.id]);
+            const senderGiftAmount = checkGiftResult[0].amount;
+            if (senderGiftAmount < amount) {
+                return res.status(400).send("You don't have enough gift to send");
+            }
+
+            // deduct gift from sender
+            const sqlDeductGift = `
+            UPDATE palette_artz_db.user_has_gift uhg
+            SET uhg.amount = uhg.amount - ?
+            WHERE uhg.gift_id = ? AND user_id = ?
+            `;
+            const [deductGiftResult] = await db.query(sqlDeductGift, [amount, gift_id,]);
+            if (deductGiftResult.affectedRows != 1) {
+                throw Error("Cannot deduct gift");
+            }
+
+            // give gift to reciever but it convert to account balance
+            const sqlTransferGift = `
+            UPDATE palette_artz_db.wallet wl
+            JOIN palette_artz_db.user us ON us.wallet_id = wl.id
+            SET wl.balance = wl.balance + ?
+            WHERE us.id = ?
+            `;
+
+            const [transferGiftResult] = await db.query(sqlTransferGift, []);
+        } catch (error) {
+
+        }
+
+
+    });
+
 }
 
 module.exports = gift;
