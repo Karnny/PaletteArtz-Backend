@@ -185,6 +185,7 @@ function gift({ app, auth, db, mysql, upload }) {
     app.post('/api/send_gift', auth, async (req, res) => {
         let { gift_id, amount, user_id } = req.body;
 
+        console.log(req.body);
         if (!(gift_id && amount && user_id)) {
             return res.status(400).send("gift_id, amount, user_id are required!");
         }
